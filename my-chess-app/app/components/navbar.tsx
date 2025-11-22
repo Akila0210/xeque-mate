@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { href: "/", icon: IoHome },
+  { href: "/home", icon: IoHome },
   { href: "/tournaments", icon: FaTrophy },
   { href: "/practice", icon: GoGoal },
   { href: "/profile", icon: FaUser },

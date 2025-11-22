@@ -1,7 +1,5 @@
-import Image from "next/image";
-import CardNavigation from "./components/card-navigation";
-import ImagesCarousel from "./components/images-carousel";
+import { redirect } from 'next/navigation';
 
-export default function Home() {
-  return <p>Hello</p>;
+export default function RootPage() {
+  redirect('/login');
 }
