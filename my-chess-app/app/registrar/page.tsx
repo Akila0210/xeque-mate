@@ -1,7 +1,18 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent } from "react";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    router.push("/home");
+  };
+  
   return (
   <div className="flex items-center justify-center min-h-screen bg-[url('/background-image.png')]">
       <div className="w-full max-w-md p-12">
@@ -17,7 +28,7 @@ export default function RegisterPage() {
         <h1 className="text-2xl mb-2 text-center text-white">
           Cadastro de Usuário
         </h1>
-        <form className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <input
               type="text"
@@ -68,7 +79,6 @@ export default function RegisterPage() {
             </Link>
           </div>
         </form>
-
       </div>
     </div>
   );
