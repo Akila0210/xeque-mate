@@ -1,9 +1,21 @@
-
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import CardNavigation from "../components/card-navigation";
 import ImagesCarousel from "../components/images-carousel";
 import NavBar from "../components/navbar";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+
+export default async function Home() {
+
+  const session = await auth.api.getSession({
+    headers: await headers()
+})
+
+if(!session){
+  redirect('/login');
+}
+
   return (
     <div className="min-h-screen overflow-hidden relative">
         <main className="flex-1 px-4 py-10 flex flex-col gap-9">

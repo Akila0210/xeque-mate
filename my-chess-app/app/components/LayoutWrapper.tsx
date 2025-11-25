@@ -6,7 +6,7 @@ import TittleHeader from "./tittle-header";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const hideHeaderNav = pathname === "/login" || pathname == "/registrar"; // coloque aqui outras rotas que não devem mostrar
+  const hideHeaderNav = pathname === "/login" || pathname == "/registrar";
 
   return (
     <>
