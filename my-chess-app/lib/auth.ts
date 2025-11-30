@@ -4,11 +4,20 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 
 
 export const auth = betterAuth({
-    database: prismaAdapter(prisma,{
-        provider: "postgresql",
-    }),
-    emailAndPassword: {
-        enabled: true,
-        requireEmailVerification: false,
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: false,
+  },
+  user: {
+    changeEmail: {
+      enabled: true,
+      updateEmailWithoutVerification: true,
     },
+    deleteUser: {
+      enabled: true,
+    },
+  },
 });
