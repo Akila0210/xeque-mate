@@ -2,11 +2,13 @@ import { auth } from "@/lib/auth"
 import { notFound } from "next/navigation"
 import { headers } from "next/headers"
 import { FaUser } from "react-icons/fa";
-import { FlameIcon, TrophyIcon } from "lucide-react";
+import { FlameIcon, Settings, TrophyIcon } from "lucide-react";
 import { getUserPoints } from "../data/get-user-points";
 import { getAchievements } from "../data/get-achievements";
 import DynamicIcon from "../utils/icon-convert";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function ProfilePage() {
 
@@ -22,7 +24,7 @@ export default async function ProfilePage() {
   const achievements = await getAchievements();
 
   return (
-    <div className="text-white py-10 px-3 gap-5 flex flex-col items-center">
+    <>    <div className="text-white py-10 px-3 gap-5 flex flex-col items-center">
       <div className="w-full gap-4 flex flex-col items-center">
         <div className="inline-block bg-white w-20 h-20 rounded-lg overflow-hidden">
           <FaUser size={"full"} className="p-2" color="gray" />
@@ -65,5 +67,9 @@ export default async function ProfilePage() {
         </div>
       </div>
     </div>
+      <Link href={"/userSettings"} className="text-white absolute top-23 right-5">
+        <Settings />
+      </Link>
+    </>
   );
 }
