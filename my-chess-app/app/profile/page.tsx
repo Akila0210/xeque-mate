@@ -1,0 +1,69 @@
+import { auth } from "@/lib/auth"
+import { notFound } from "next/navigation"
+import { headers } from "next/headers"
+import { FaUser } from "react-icons/fa";
+import { FlameIcon, TrophyIcon } from "lucide-react";
+import { getUserPoints } from "../data/get-user-points";
+import { getAchievements } from "../data/get-achievements";
+import DynamicIcon from "../utils/icon-convert";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+export default async function ProfilePage() {
+
+  const rawHeaders = await headers();
+  const session = await auth.api.getSession({
+    headers: Object.fromEntries(rawHeaders.entries())
+  });
+
+  if (!session) return notFound();
+
+  const points = await getUserPoints(session?.user.id);
+
+  const achievements = await getAchievements();
+
+  return (
+    <div className="text-white py-10 px-3 gap-5 flex flex-col items-center">
+      <div className="w-full gap-4 flex flex-col items-center">
+        <div className="inline-block bg-white w-20 h-20 rounded-lg overflow-hidden">
+          <FaUser size={"full"} className="p-2" color="gray" />
+        </div>
+        <h3 className="w-[70%] text-center rounded-xl font-bold bg-white/20 backdrop-blur-md">
+          {session.user.name}
+        </h3>
+      </div>
+      <div className="flex items-center gap-2 text-[12px] w-[95%] bg-white/20 backdrop-blur-md p-2 rounded-md">
+        <div className="flex items-center text-yellow-400 gap-2">
+          <FlameIcon />
+          <h2>Sequência de X dias</h2>
+        </div>
+        <p className="text-lg w-1">|</p>
+        <div className="flex items-center gap-2">
+          <TrophyIcon />
+          <h2>
+            {points?.points ?? 0}
+          </h2>
+        </div>
+      </div>
+      <div className="w-full flex items-center gap-4 flex-col">
+        <div className="bg-white/20 w-[95%] text-center backdrop-blur-md py-2 rounded-md border-2">
+          <h2>Galeria de conquistas</h2>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {achievements.map((achievement) => (
+            <Tooltip key={achievement.id}>
+              <TooltipTrigger>
+                <div className="p-4 border-2 border-white rounded-lg backdrop-blur-lg bg-white/20">
+                  <DynamicIcon iconName={achievement.icon} />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{achievement.description}</p>
+              </TooltipContent>
+
+            </Tooltip>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
