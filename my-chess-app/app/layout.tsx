@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import LayoutWrapper from "./components/LayoutWrapper";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const montserrat = Montserrat({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -20,11 +21,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="overflow-hidden">
-      <body
-        className={`${montserrat.className} overflow-hidden bg-[url("../assets/background-image.png")] antialiased`}
-      >
-        <LayoutWrapper>{children}</LayoutWrapper>
-      </body>
+      <TooltipProvider>
+        <body
+          className={`${montserrat.className} overflow-hidden bg-[url("../assets/background-image.png")] antialiased`}
+        >
+          <LayoutWrapper>{children}</LayoutWrapper>
+        </body>
+      </TooltipProvider>
     </html>
   );
 }
