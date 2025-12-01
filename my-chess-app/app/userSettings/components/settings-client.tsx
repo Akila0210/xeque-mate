@@ -34,7 +34,7 @@ const router = useRouter();
 
 return (
 <div className="text-white">
-<header className="px-4 pt-6 pb-4">
+<header className="pt-6 px-5 pb-3">
 <button
 onClick={() => router.back()}
 className="flex items-center text-base mb-4"

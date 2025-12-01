@@ -103,22 +103,22 @@ export function ChangeProfileClient() {
   }
 
   return (
-    <div className="min-h-screen w-full text-white flex flex-col">
+    <div className=" text-white">
       <header className="pt-6 px-5 pb-3">
         <button
           type="button"
           onClick={() => router.back()}
-          className="inline-flex items-center text-sm text-white"
+          className="flex items-center text-base mb-4"
         >
-          <ChevronLeft className="w-4 h-4 mr-1" />
+          <ChevronLeft className="w-5 h-5 mr-1" />
           Voltar
         </button>
       </header>
 
       <main className="flex-1 px-5 pb-6">
         <div className="mt-1 mb-4">
-          <h1 className="text-xl font-bold">Alterar Perfil</h1>
-          <p className="mt-2 text-xs text-white/80 max-w-xs">
+          <h1 className="text-2xl font-bold">Alterar Perfil</h1>
+          <p className="mt-2 text-base text-white/80">
             Preencha os campos abaixo para alterar os dados do seu perfil.
           </p>
         </div>

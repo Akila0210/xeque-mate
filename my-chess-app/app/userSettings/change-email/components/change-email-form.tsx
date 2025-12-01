@@ -99,7 +99,7 @@ export function ChangeEmailClient() {
 
   return (
     <div className=" text-white">
-      <header className="px-4 pt-6 pb-4">
+      <header className="pt-6 px-5 pb-3">
         <button
           type="button"
           onClick={() => router.back()}
@@ -131,7 +131,7 @@ export function ChangeEmailClient() {
                   disabled={isLoading}
                   className={`
                     w-full mt-1 p-3
-                    bg-[#F5F8FA] border border-neutral-400 rounded-[4px]
+                    bg-[#F5F8FA] border border-neutral-400 rounded-lg
                     focus:outline-none focus:ring-1
                     text-[10px] text-black
                     ${errors.newEmail ? "border-red-500" : ""}
@@ -152,7 +152,7 @@ export function ChangeEmailClient() {
                   disabled={isLoading}
                   className={`
                     w-full mt-1 p-3
-                    bg-[#F5F8FA] border border-neutral-400 rounded-[4px]
+                    bg-[#F5F8FA] border border-neutral-400 rounded-lg
                     focus:outline-none focus:ring-1
                     text-[10px] text-black
                     ${errors.confirmEmail ? "border-red-500" : ""}
@@ -176,7 +176,7 @@ export function ChangeEmailClient() {
                     disabled={isLoading}
                     className={`
                       w-full mt-1 p-3
-                      bg-[#F5F8FA] border border-neutral-400 rounded-[4px]
+                      bg-[#F5F8FA] border border-neutral-400 rounded-lg
                       focus:outline-none focus:ring-1
                       text-[10px] text-black
                       pr-10
