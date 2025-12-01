@@ -8,7 +8,12 @@ import { getAchievements } from "../data/get-achievements";
 import DynamicIcon from "../utils/icon-convert";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { getWeeklyPosition } from "../data/get-weekly-position";
+import { ProfileClient } from "./ProfileClient";
+import { getAllTimeRanking } from "../data/get-alltime-ranking";
+
+
+
 
 export default async function ProfilePage() {
 
@@ -23,8 +28,12 @@ export default async function ProfilePage() {
 
   const achievements = await getAchievements();
 
+  const weeklyPosition = await getWeeklyPosition(session.user.id);
+  const weeklyRanking = await getAllTimeRanking();
+
   return (
-    <>    <div className="text-white py-10 px-3 gap-5 flex flex-col items-center">
+    <>    
+    <div className="text-white py-10 px-3 gap-5 flex flex-col items-center">
       <div className="w-full gap-4 flex flex-col items-center">
         <div className="inline-block bg-white w-20 h-20 rounded-lg overflow-hidden">
           <FaUser size={"full"} className="p-2" color="gray" />
@@ -33,12 +42,12 @@ export default async function ProfilePage() {
           {session.user.name}
         </h3>
       </div>
-      <div className="flex items-center gap-2 text-[12px] w-[95%] bg-white/20 backdrop-blur-md p-2 rounded-md">
+      <div className="flex items-center gap-2 text-base w-[95%] bg-white/20 backdrop-blur-md p-2 rounded-md">
         <div className="flex items-center text-yellow-400 gap-2">
           <FlameIcon />
           <h2>Sequência de X dias</h2>
         </div>
-        <p className="text-lg w-1">|</p>
+        <div className="w-0.5 h-6 bg-white" />
         <div className="flex items-center gap-2">
           <TrophyIcon />
           <h2>
@@ -46,6 +55,10 @@ export default async function ProfilePage() {
           </h2>
         </div>
       </div>
+      <ProfileClient
+        weeklyPosition={weeklyPosition}
+        weeklyRanking={weeklyRanking}
+      />
       <div className="w-full flex items-center gap-4 flex-col">
         <div className="bg-white/20 w-[95%] text-center backdrop-blur-md py-2 rounded-md border-2">
           <h2>Galeria de conquistas</h2>

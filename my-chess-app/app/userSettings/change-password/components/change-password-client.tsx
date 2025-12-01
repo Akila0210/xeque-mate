@@ -102,8 +102,8 @@ async function handleSubmit(e: React.FormEvent) {
 
 
   return (
-   <div className=" text-white">
-      <header className="px-4 pt-6 pb-4">
+    <div className=" text-white">
+      <header className="pt-6 px-5 pb-3">
         <button
           type="button"
           onClick={() => router.back()}
@@ -125,7 +125,7 @@ async function handleSubmit(e: React.FormEvent) {
         <Card className="mt-4 rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md">
           <CardContent className="px-4 py-5 space-y-4">
             <form className="space-y-4" onSubmit={handleSubmit}>
-              {/* Senha atual */}
+
               <div className="space-y-1">
                 <div className="relative">
                   <input
@@ -162,7 +162,6 @@ async function handleSubmit(e: React.FormEvent) {
                 )}
               </div>
 
-              {/* Nova senha */}
               <div className="space-y-1">
                 <div className="relative">
                   <input
@@ -199,7 +198,7 @@ async function handleSubmit(e: React.FormEvent) {
                 )}
               </div>
 
-              {/* Confirmar nova senha */}
+
               <div className="space-y-1">
                 <div className="relative">
                   <input
@@ -236,7 +235,6 @@ async function handleSubmit(e: React.FormEvent) {
                 )}
               </div>
 
-              {/* Botão confirmar */}
               <div className="pt-2">
                 <Button
                   type="submit"
