@@ -1,4 +1,4 @@
-import { PrismaClient } from "../app/generated/prisma/client"
+import { PrismaClient } from "../app/generated/prisma2/client"
 const prisma = new PrismaClient();
 
 const achievements = [

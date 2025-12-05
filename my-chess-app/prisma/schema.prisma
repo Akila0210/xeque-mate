@@ -1,12 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  output   = "../app/generated/prisma2"
 }
 
 datasource db {
@@ -15,18 +9,26 @@ datasource db {
 }
 
 model User {
-  id            String            @id
+  id            String    @id
   name          String
   email         String
-  emailVerified Boolean           @default(false)
+  emailVerified Boolean   @default(false)
   image         String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
-  wins          Int               @default(0)
-  points        Int               @default(0)
-  userAchievements  UserAchievement[]
+  wins          Int       @default(0)
+  points        Int       @default(0)
+
+  // Relação com torneios
+  torneioCriados Torneio[] @relation("TorneiosCriados")
+  participacoes  Participante[]
+  userAchievements UserAchievement[]
+  
+  // Relação com convites - CORRIGIDO AQUI
+  convitesCriados Convite[] @relation("ConviteCriadoPor")
+  convitesUsados  Convite[] @relation("ConviteUsadoPor")
 
   @@unique([email])
   @@map("user")
@@ -46,8 +48,11 @@ model UserAchievement {
   achievementId String
   achievedAt    DateTime @default(now())
 
-  user        User        @relation(fields: [userId], references: [id])
-  achievement Achievement @relation(fields: [achievementId], references: [id])
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([achievementId])
 }
 
 model Session {
@@ -96,4 +101,96 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Torneio {
+  id        String   @id @default(uuid())
+  nome      String
+  data      DateTime
+  modo      String
+  descricao String?
+  finalizado Boolean @default(false)
+  criadorId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relação com User
+  criador       User          @relation("TorneiosCriados", fields: [criadorId], references: [id], onDelete: Cascade)
+  participantes Participante[]
+  convites      Convite[]
+  partidas      Partida[]
+
+  @@index([criadorId])
+  @@map("torneio")
+}
+
+model Participante {
+  id        String   @id @default(uuid())
+  torneioId String
+  userId    String
+  pontos    Float    @default(0)
+  partidas  Int      @default(0)
+  vitorias  Int      @default(0)
+  derrotas  Int      @default(0)
+  empates   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  torneio Torneio @relation(fields: [torneioId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partidasBrancas Partida[] @relation("PartidaWhite")
+  partidasPretas  Partida[] @relation("PartidaBlack")
+
+  @@unique([torneioId, userId])
+  @@index([torneioId])
+  @@index([userId])
+  @@map("participante")
+}
+
+enum ResultadoPartida {
+  WHITE_WIN
+  BLACK_WIN
+  DRAW
+}
+
+model Partida {
+  id        String            @id @default(uuid())
+  torneioId String
+  rodada    Int
+  whiteId   String
+  blackId   String?
+  resultado ResultadoPartida?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  torneio Torneio @relation(fields: [torneioId], references: [id], onDelete: Cascade)
+  white   Participante @relation("PartidaWhite", fields: [whiteId], references: [id], onDelete: Cascade)
+  black   Participante? @relation("PartidaBlack", fields: [blackId], references: [id], onDelete: Cascade)
+
+  @@index([torneioId])
+  @@index([rodada])
+  @@unique([torneioId, rodada, whiteId, blackId])
+  @@map("partida")
+}
+
+model Convite {
+  id          String   @id @default(uuid())
+  torneioId   String
+  token       String   @unique
+  aceito      Boolean  @default(false)
+  aceiteEm    DateTime?
+  criadoPorId String
+  usadoPorId  String?
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  // Relacionamentos - CORRIGIDO AQUI TAMBÉM
+  torneio   Torneio @relation(fields: [torneioId], references: [id], onDelete: Cascade)
+  criadoPor User    @relation("ConviteCriadoPor", fields: [criadoPorId], references: [id])
+  usadoPor  User?   @relation("ConviteUsadoPor", fields: [usadoPorId], references: [id])
+
+  @@index([torneioId])
+  @@index([token])
+  @@index([criadoPorId])
+  @@map("convite")
 }

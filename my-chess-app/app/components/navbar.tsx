@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 
 const items = [
   { href: "/home", icon: IoHome },
-  { href: "/tournaments", icon: FaTrophy },
+  { href: "/torneios", icon: FaTrophy },
   { href: "/practice", icon: GoGoal },
   { href: "/profile", icon: FaUser },
 ];

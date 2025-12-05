@@ -20,10 +20,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="overflow-hidden">
+    <html lang="en">
       <TooltipProvider>
         <body
-          className={`${montserrat.className} overflow-hidden bg-[url("../assets/background-image.png")] antialiased`}
+          className={`${montserrat.className} bg-[url("../assets/background-image.png")] antialiased min-h-screen`}
         >
           <LayoutWrapper>{children}</LayoutWrapper>
         </body>

@@ -24,10 +24,10 @@ if(!session){
             description="Seu espaço para interagir e praticar xadrez com seus amigos"
           />
           <CardNavigation
-            image_url="/throphy.png"
+            image_url="/trophy.png"
             title="Torneios do clube"
             description="Participe dos torneios presenciais e online do clube, com emparelhamentos equilibrados e sistema de desempate próprio."
-            navigate_to="/tournaments"
+            navigate_to="/torneios"
           />
           <CardNavigation
             image_url="/goal.png"
