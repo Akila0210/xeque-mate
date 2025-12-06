@@ -11,7 +11,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   return (
     <>
       {!hideHeaderNav && <TittleHeader />}
-      <div className={hideHeaderNav ? "" : "pb-24"}>{children}</div>
+      {children}
       {!hideHeaderNav && <NavBar />}
     </>
   );
