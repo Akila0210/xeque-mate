@@ -3,14 +3,26 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+interface UserMini {
+  id?: string | null;
+}
+
 interface Torneio {
   id: string;
   nome: string;
   data: string;
   modo: string;
+  criadorId?: string;
   finalizado?: boolean;
   _count?: { partidas?: number };
-  participantes?: { id: string; user?: { id?: string | null } }[];
+  participantes?: { id: string; user?: UserMini }[];
+}
+
+interface ConfirmState {
+  open: boolean;
+  message: string;
+  confirmLabel?: string;
+  onConfirm: () => Promise<void> | void;
 }
 
 export default function TorneiosPage() {
@@ -18,36 +30,53 @@ export default function TorneiosPage() {
   const [participando, setParticipando] = useState<Torneio[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<ConfirmState>({
+    open: false,
+    message: "",
+    confirmLabel: undefined,
+    onConfirm: async () => {},
+  });
 
   useEffect(() => {
-    async function load() {
+    const load = async () => {
+      setLoading(true);
       try {
-        const resCriados = await fetch("/api/torneios", { cache: "no-store" });
-        const jsonCriados = await resCriados.json();
-        setTorneios(Array.isArray(jsonCriados) ? jsonCriados : []);
+        const [resCriados, resParticipando, resUser] = await Promise.all([
+          fetch("/api/torneios", { cache: "no-store" }),
+          fetch("/api/torneios/participando", { cache: "no-store" }),
+          fetch("/api/user", { cache: "no-store" }),
+        ]);
 
-        const resParticipando = await fetch("/api/torneios/participando", { cache: "no-store" });
-        const jsonParticipando = await resParticipando.json();
-        setParticipando(Array.isArray(jsonParticipando) ? jsonParticipando : []);
+        const [jsonCriados, jsonParticipando, jsonUser] = await Promise.all([
+          resCriados.json().catch(() => ({})),
+          resParticipando.json().catch(() => ({})),
+          resUser.json().catch(() => ({})),
+        ]);
+
+        if (resCriados.ok && Array.isArray(jsonCriados)) {
+          setTorneios(jsonCriados);
+        } else if (jsonCriados?.error) {
+          alert(jsonCriados.error);
+        }
+
+        if (resParticipando.ok && Array.isArray(jsonParticipando)) {
+          setParticipando(jsonParticipando);
+        } else if (jsonParticipando?.error) {
+          alert(jsonParticipando.error);
+        }
+
+        if (resUser.ok && jsonUser?.id) {
+          setUserId(jsonUser.id as string);
+        }
       } catch (error) {
         console.error("Erro ao carregar torneios:", error);
+        alert("Erro ao carregar torneios");
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
-    }
-
-    async function loadUser() {
-      try {
-        const res = await fetch("/api/user");
-        const json = await res.json();
-        if (json?.id) setUserId(json.id);
-      } catch (error) {
-        console.error("Erro ao obter usuário:", error);
-      }
-    }
+    };
 
     load();
-    loadUser();
   }, []);
 
   const modeImage = (modo: string) => {
@@ -85,6 +114,30 @@ export default function TorneiosPage() {
     };
   };
 
+  const abrirConfirmacao = (
+    message: string,
+    onConfirm: () => Promise<void> | void,
+    confirmLabel?: string
+  ) => {
+    setConfirmModal({ open: true, message, onConfirm, confirmLabel });
+  };
+
+  const excluirTorneio = async (id: string) => {
+    try {
+      const res = await fetch(`/api/torneios/${id}`, { method: "DELETE" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.error) {
+        alert(json.error ?? "Erro ao excluir torneio");
+        return;
+      }
+      setTorneios((prev) => prev.filter((item) => item.id !== id));
+      setParticipando((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao excluir torneio");
+    }
+  };
+
   const sairDoTorneio = async (t: Torneio) => {
     if (!userId) {
       alert("Não foi possível identificar o usuário.");
@@ -99,31 +152,21 @@ export default function TorneiosPage() {
       return;
     }
 
-    const temConfrontos = (t._count?.partidas ?? 0) > 0;
-    if (temConfrontos && !t.finalizado) {
+    if ((t._count?.partidas ?? 0) > 0 && !t.finalizado) {
       alert("Não é possível sair com confrontos gerados. Aguarde excluir confrontos ou finalizar.");
       return;
     }
 
-    if (!confirm("Deseja sair do torneio?")) return;
-
     try {
-      const res = await fetch(`/api/torneios/${t.id}/participantes/${participante.id}`, {
-        method: "DELETE",
-      });
-      let json: { error?: string; success?: boolean } = {};
-      try {
-        const text = await res.text();
-        json = text ? JSON.parse(text) : {};
-      } catch {}
-
+      const res = await fetch(`/api/torneios/${t.id}/participantes/${participante.id}`, { method: "DELETE" });
+      const json = await res.json().catch(() => ({}));
       if (!res.ok || json.error) {
         alert(json.error ?? "Erro ao sair do torneio");
         return;
       }
 
       setParticipando((prev) => prev.filter((item) => item.id !== t.id));
-      alert("Você saiu do torneio");
+      alert(t.finalizado ? "Torneio removido da sua lista" : "Você saiu do torneio");
     } catch (err) {
       console.error(err);
       alert("Erro ao sair do torneio");
@@ -133,6 +176,8 @@ export default function TorneiosPage() {
   if (loading) {
     return <p className="text-white p-5">Carregando...</p>;
   }
+
+  const atingiuLimiteCriados = torneios.length >= 5;
 
   return (
     <main className="min-h-screen text-white p-5 flex flex-col gap-6">
@@ -159,7 +204,13 @@ export default function TorneiosPage() {
         <div className="flex-1" />
 
         <Link
-          href="/torneios/novo"
+          href={atingiuLimiteCriados ? "#" : "/torneios/novo"}
+          onClick={(e) => {
+            if (atingiuLimiteCriados) {
+              e.preventDefault();
+              alert("Limite de 5 torneios atingido. Exclua um para criar outro.");
+            }
+          }}
           className="w-full sm:w-auto text-center bg-[#6BAAFD] hover:bg-[#5C9CF0] transition px-4 py-3 rounded-lg text-white font-medium border border-[#5C9CF0]"
         >
           Criar Torneio
@@ -177,19 +228,19 @@ export default function TorneiosPage() {
               key={t.id}
               className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5"
             >
-              <img src={modeImage(t.modo)} className="w-10 h-10" alt={t.modo} />
+              <img src={modeImage(t.modo)} className="w-10 h-10 mx-auto sm:mx-0" alt={t.modo} />
 
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold">{t.nome}</h3>
+              <div className="flex-1 flex flex-col gap-1 items-center text-center sm:items-start sm:text-left">
+                <h3 className="text-lg font-semibold leading-tight break-words">{t.nome}</h3>
                 <p className="text-sm opacity-80">
                   Modo: <span className="font-semibold">{t.modo}</span>
                 </p>
-                <p className="text-xs opacity-60 mt-1">
+                <p className="text-xs opacity-60">
                   {new Date(t.data).toLocaleDateString("pt-BR")}
                 </p>
                 {(() => {
                   const status = statusInfo(t);
-                  return <span className={status.className}>{status.label}</span>;
+                  return <span className={`${status.className} self-center sm:self-start mt-1`}>{status.label}</span>;
                 })()}
               </div>
 
@@ -209,20 +260,18 @@ export default function TorneiosPage() {
                 </Link>
 
                 <button
-                  onClick={async () => {
-                    if (!confirm("Tem certeza que deseja excluir?")) return;
-
-                    await fetch(`/api/torneios/${t.id}`, {
-                      method: "DELETE",
-                    });
-
-                    setTorneios((prev) =>
-                      prev.filter((item) => item.id !== t.id)
-                    );
-                  }}
+                  onClick={() =>
+                    abrirConfirmacao(
+                      t.finalizado
+                        ? "Tem certeza que deseja excluir este torneio finalizado?"
+                        : "Tem certeza que deseja excluir este torneio?",
+                      () => excluirTorneio(t.id),
+                      t.finalizado ? "Excluir torneio" : "Excluir"
+                    )
+                  }
                   className="w-full sm:w-auto text-center bg-[#F37272] hover:bg-[#E05F5F] border border-[#E05F5F] px-4 py-2 rounded-lg text-sm font-semibold text-white"
                 >
-                  Excluir
+                  {t.finalizado ? "Excluir torneio" : "Excluir"}
                 </button>
               </div>
             </article>
@@ -232,7 +281,7 @@ export default function TorneiosPage() {
 
       {/* LISTA DE TORNEIOS PARTICIPANDO */}
       <div className="flex flex-col gap-4 mt-8">
-        <h2 className="text-lg font-bold mb-2">Torneios Participando</h2>
+        <h2 className="text-lg font-bold mb-2">Torneios em disputa</h2>
         {participando.length === 0 ? (
           <p className="text-center opacity-60">Você não está participando de nenhum torneio</p>
         ) : (
@@ -241,19 +290,19 @@ export default function TorneiosPage() {
               key={t.id}
               className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5"
             >
-              <img src={modeImage(t.modo)} className="w-10 h-10" alt={t.modo} />
+              <img src={modeImage(t.modo)} className="w-10 h-10 mx-auto sm:mx-0" alt={t.modo} />
 
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold">{t.nome}</h3>
+              <div className="flex-1 flex flex-col gap-1 items-center text-center sm:items-start sm:text-left">
+                <h3 className="text-lg font-semibold leading-tight break-words">{t.nome}</h3>
                 <p className="text-sm opacity-80">
                   Modo: <span className="font-semibold">{t.modo}</span>
                 </p>
-                <p className="text-xs opacity-60 mt-1">
+                <p className="text-xs opacity-60">
                   {new Date(t.data).toLocaleDateString("pt-BR")}
                 </p>
                 {(() => {
                   const status = statusInfo(t);
-                  return <span className={status.className}>{status.label}</span>;
+                  return <span className={`${status.className} self-center sm:self-start mt-1`}>{status.label}</span>;
                 })()}
               </div>
 
@@ -265,18 +314,63 @@ export default function TorneiosPage() {
                   Acessar
                 </Link>
                 {/* Sem editar/apagar/compartilhar para torneios apenas participando */}
-                <button
-                  onClick={() => sairDoTorneio(t)}
-                  className="w-full sm:w-auto text-center bg-[#F37272] hover:bg-[#E05F5F] border border-[#E05F5F] px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={((t._count?.partidas ?? 0) > 0) && !t.finalizado}
-                >
-                  Sair
-                </button>
+                {t.criadorId !== userId && (
+                  <button
+                    onClick={() =>
+                      abrirConfirmacao(
+                        t.finalizado
+                          ? "Tem certeza que deseja excluir este torneio da sua lista?"
+                          : "Tem certeza que deseja sair deste torneio?",
+                        () => sairDoTorneio(t),
+                        t.finalizado ? "Excluir" : "Sair"
+                      )
+                    }
+                    className="w-full sm:w-auto text-center bg-[#F37272] hover:bg-[#E05F5F] border border-[#E05F5F] px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={((t._count?.partidas ?? 0) > 0) && !t.finalizado}
+                  >
+                    {t.finalizado ? "Excluir torneio" : "Sair"}
+                  </button>
+                )}
               </div>
             </article>
           ))
         )}
       </div>
+
+      {confirmModal.open && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+          <div className="bg-slate-900 text-white w-full max-w-md rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Confirmação</h3>
+              <button
+                className="text-sm text-gray-300 hover:text-white"
+                onClick={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+              >
+                Fechar
+              </button>
+            </div>
+            <div className="p-4 text-sm text-gray-100 whitespace-pre-line">{confirmModal.message}</div>
+            <div className="px-4 py-3 border-t border-white/10 flex justify-end gap-3 bg-slate-900/60">
+              <button
+                className="px-4 py-2 rounded-lg border border-white/20 hover:bg-white/10 text-sm font-semibold"
+                onClick={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-[#F37272] hover:bg-[#E05F5F] text-sm font-semibold"
+                onClick={async () => {
+                  const fn = confirmModal.onConfirm;
+                  setConfirmModal((prev) => ({ ...prev, open: false }));
+                  await fn();
+                }}
+              >
+                {confirmModal.confirmLabel ?? "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

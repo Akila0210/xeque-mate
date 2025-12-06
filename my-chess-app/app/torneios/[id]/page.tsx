@@ -63,6 +63,10 @@ export default function TorneioPage() {
   const [excluindo, setExcluindo] = useState(false);
   const [confirmarFinalizar, setConfirmarFinalizar] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [confirmRemocao, setConfirmRemocao] = useState<{ open: boolean; participanteId: string | null; nome?: string }>(
+    { open: false, participanteId: null }
+  );
   const modeImage = (m: string) => {
     const map: Record<string, string> = {
       Classic: "/black-pawn.png",
@@ -77,9 +81,16 @@ export default function TorneioPage() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
         const res = await fetch(`/api/torneios/${id}`, { cache: "no-store" });
         const json = await res.json();
+
+        if (!res.ok) {
+          alert(json.error ?? "Erro ao carregar torneio");
+          router.push("/torneios");
+          return;
+        }
 
         if (json.error) {
           alert(json.error);
@@ -92,9 +103,9 @@ export default function TorneioPage() {
         console.error(err);
         alert("Erro ao carregar torneio");
         router.push("/torneios");
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     async function loadUser() {
@@ -113,6 +124,11 @@ export default function TorneioPage() {
 
   const gerarConfrontos = async () => {
     if (!torneio || userId !== torneio.criadorId) return;
+    const jaTemConfrontos = (torneio.rodadas?.length ?? 0) > 0;
+    if (jaTemConfrontos) {
+      alert("Exclua os confrontos atuais antes de gerar novos.");
+      return;
+    }
     const roundsInput = prompt("Quantas rodadas deseja gerar?", "1");
     if (roundsInput === null) return;
     const rounds = Number(roundsInput);
@@ -309,7 +325,7 @@ export default function TorneioPage() {
   const isCriador = userId === torneio.criadorId;
   const temConfrontos = (torneio.rodadas?.length ?? 0) > 0;
   const status = torneio.finalizado
-    ? { label: "Finalizado", className: "bg-[#1F5C3F] text-[#D8F3DC] border border-[#3FA072]" }
+    ? { label: "Finalizado", className: "bg-[#D9F4EA] text-[#1E8F63] border border-[#A4E2C7]" }
     : temConfrontos
       ? { label: "Em disputa", className: "bg-blue-600/20 border border-blue-400 text-blue-100" }
       : { label: "Esperando confrontos", className: "bg-gray-500/20 border border-gray-400 text-gray-100" };
@@ -342,11 +358,7 @@ export default function TorneioPage() {
 
         {/* Botão Compartilhar */}
         <button
-          onClick={() => {
-            const conviteLink = `http://192.168.0.6:3000/torneios/${id}/convite`;
-            navigator.clipboard.writeText(conviteLink);
-            alert("Link copiado para a área de transferência!");
-          }}
+          onClick={() => setShareOpen(true)}
           className="bg-[#6BAAFD] hover:bg-[#5C9CF0] transition px-4 py-2 rounded-lg font-semibold text-white border border-[#5C9CF0]"
           title="Compartilhar link do convite"
         >
@@ -356,50 +368,66 @@ export default function TorneioPage() {
 
       {/* INFORMAÇÕES DO TORNEIO */}
       <section className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-        <div className="flex items-start gap-5">
-          <img src={modeImage(torneio.modo)} className="w-16 h-16" alt={torneio.modo} />
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 flex-1 text-center sm:text-left">
+            <img
+              src={modeImage(torneio.modo)}
+              className="w-16 h-16 flex-shrink-0 mx-auto sm:mx-0"
+              alt={torneio.modo}
+            />
 
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">{torneio.nome}</h1>
-            <div className="flex flex-col gap-2 text-sm opacity-80">
-              <p>
-                <span className="font-semibold">Modo:</span> {torneio.modo}
-              </p>
-              <p>
-                <span className="font-semibold">Data:</span>{" "}
-                {new Date(torneio.data).toLocaleDateString("pt-BR", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric"
-                })}
-              </p>
-              {torneio.descricao ? (
-                <p className="text-xs opacity-90">
-                  <span className="font-semibold">Descrição:</span> {torneio.descricao}
+            <div className="flex-1 flex flex-col gap-2 items-center sm:items-start">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                <h1 className="text-3xl font-bold leading-tight">{torneio.nome}</h1>
+                <span className={`mt-2 sm:mt-0 self-center sm:self-center px-3 py-1 rounded-full text-xs font-semibold ${status.className}`}>
+                  {status.label}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2 text-sm opacity-80">
+                <p>
+                  <span className="font-semibold">Modo:</span> {torneio.modo}
                 </p>
-              ) : null}
+                <p>
+                  <span className="font-semibold">Data:</span>{" "}
+                  {new Date(torneio.data).toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric"
+                  })}
+                </p>
+                {torneio.descricao ? (
+                  <p className="text-xs opacity-90">
+                    <span className="font-semibold">Descrição:</span> {torneio.descricao}
+                  </p>
+                ) : null}
+              </div>
             </div>
-          </div>
-
-          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${status.className}`}>
-            {status.label}
           </div>
         </div>
       </section>
 
       {/* BOTÕES DE AÇÃO */}
       <section className="flex flex-col sm:flex-row gap-3">
-        <button
-          className="flex-1 bg-[#3FA072] hover:bg-[#358a60] border border-[#358a60] transition px-6 py-3 rounded-lg font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={gerando || !isCriador || torneio.finalizado}
-          onClick={gerarConfrontos}
-        >
-          {torneio.finalizado ? "Finalizado" : gerando ? "Gerando..." : "Gerar Confrontos"}
-        </button>
+        {isCriador && (
+          <button
+            className="flex-1 bg-[#4CCB8A] hover:bg-[#3FB479] border border-[#3FB479] transition px-6 py-3 rounded-lg font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={gerando || torneio.finalizado || temConfrontos}
+            onClick={gerarConfrontos}
+          >
+            {torneio.finalizado
+              ? "Finalizado"
+              : temConfrontos
+                ? "Exclua confrontos para gerar"
+                : gerando
+                  ? "Gerando..."
+                  : "Gerar Confrontos"}
+          </button>
+        )}
 
         <button
-          className="flex-1 bg-[#6BAAFD] hover:bg-[#5C9CF0] transition px-6 py-3 rounded-lg font-semibold text-white border border-[#5C9CF0]"
+          className={`${isCriador ? "flex-1" : "w-full"} bg-[#6BAAFD] hover:bg-[#5C9CF0] transition px-6 py-3 rounded-lg font-semibold text-white border border-[#5C9CF0]`}
           onClick={() => setVerTabela(true)}
         >
           Ver Tabela
@@ -409,7 +437,7 @@ export default function TorneioPage() {
       {isCriador && (
         <section className="flex flex-col sm:flex-row gap-3">
           <button
-            className="flex-1 bg-[#D35252] hover:bg-[#C34141] border border-[#C34141] transition px-6 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-white"
+            className="flex-1 bg-[#F37272] hover:bg-[#E05F5F] border border-[#E05F5F] transition px-6 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-white"
             onClick={excluirConfrontos}
             disabled={excluindo || gerando || (torneio.rodadas?.length ?? 0) === 0}
           >
@@ -520,6 +548,118 @@ export default function TorneioPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL COMPARTILHAR */}
+      {shareOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+          <div className="bg-slate-900 text-white w-full max-w-lg rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <h3 className="text-lg font-semibold">Link de convite</h3>
+              <button
+                className="text-sm text-gray-300 hover:text-white"
+                onClick={() => setShareOpen(false)}
+              >
+                Fechar
+              </button>
+            </div>
+            <div className="p-4 flex flex-col gap-3">
+              <p className="text-sm text-gray-200">Compartilhe este link para convidar jogadores:</p>
+              {(() => {
+                const conviteLink = `http://192.168.0.6:3000/torneios/${id}/convite`;
+                const copyLink = async () => {
+                  const copyWithExecCommand = () => {
+                    const textarea = document.createElement("textarea");
+                    textarea.value = conviteLink;
+                    textarea.style.position = "fixed";
+                    textarea.style.left = "-9999px";
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    textarea.setSelectionRange(0, textarea.value.length);
+                    const success = document.execCommand("copy");
+                    document.body.removeChild(textarea);
+                    return success;
+                  };
+
+                  try {
+                    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText && window.isSecureContext) {
+                      await navigator.clipboard.writeText(conviteLink);
+                      alert("Link copiado para a área de transferência!");
+                      return;
+                    }
+
+                    const ok = copyWithExecCommand();
+                    if (ok) {
+                      alert("Link copiado para a área de transferência!");
+                      return;
+                    }
+
+                    window.prompt("Copie o link:", conviteLink);
+                  } catch (err) {
+                    console.error("Falha ao copiar link", err);
+                    const ok = copyWithExecCommand();
+                    if (ok) {
+                      alert("Link copiado para a área de transferência!");
+                    } else {
+                      window.prompt("Copie o link:", conviteLink);
+                    }
+                  }
+                };
+                return (
+                  <>
+                    <div className="bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm break-all">{conviteLink}</div>
+                    <button
+                      onClick={copyLink}
+                      className="self-start bg-[#6BAAFD] hover:bg-[#5C9CF0] border border-[#5C9CF0] text-white text-sm font-semibold px-4 py-2 rounded-lg"
+                    >
+                      Copiar link
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmRemocao.open && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+          <div className="bg-slate-900 text-white w-full max-w-md rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <h3 className="text-lg font-semibold">Confirmar remoção</h3>
+              <button
+                className="text-sm text-gray-300 hover:text-white"
+                onClick={() => setConfirmRemocao({ open: false, participanteId: null })}
+              >
+                Fechar
+              </button>
+            </div>
+            <div className="p-4 text-sm text-gray-100">
+              Tem certeza que deseja remover {confirmRemocao.nome ?? "o participante"}?
+            </div>
+            <div className="px-4 py-3 border-t border-white/10 flex justify-end gap-3 bg-slate-900/60">
+              <button
+                className="px-4 py-2 rounded-lg border border-white/20 hover:bg-white/10 text-sm font-semibold"
+                onClick={() => setConfirmRemocao({ open: false, participanteId: null })}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-[#F37272] hover:bg-[#E05F5F] text-sm font-semibold"
+                onClick={async () => {
+                  const id = confirmRemocao.participanteId;
+                  setConfirmRemocao({ open: false, participanteId: null });
+                  if (id) {
+                    await removerParticipante(id);
+                  }
+                }}
+                disabled={torneio.finalizado}
+              >
+                Excluir
+              </button>
             </div>
           </div>
         </div>
@@ -641,11 +781,15 @@ export default function TorneioPage() {
                     <div className="flex items-center gap-2">
                       {userId === torneio.criadorId && (
                         <button
-                          className="px-2 py-1 bg-[#D35252] hover:bg-[#C34141] border border-[#C34141] text-xs rounded text-white"
-                          onClick={async () => {
-                            if (!confirm("Tem certeza que deseja remover este participante?")) return;
-                            await removerParticipante(p.id);
-                          }}
+                          className="px-2 py-1 bg-[#F37272] hover:bg-[#E05F5F] border border-[#E05F5F] text-xs rounded text-white"
+                          onClick={() =>
+                            setConfirmRemocao({
+                              open: true,
+                              participanteId: p.id,
+                              nome: p.user?.name ?? "Participante",
+                            })
+                          }
+                          disabled={torneio.finalizado}
                         >
                           Excluir
                         </button>

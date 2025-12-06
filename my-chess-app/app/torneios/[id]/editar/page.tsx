@@ -66,7 +66,7 @@ export default function EditarTorneioPage() {
     e.preventDefault();
 
     if (data) {
-      const chosen = new Date(data);
+      const chosen = new Date(`${data}T00:00:00`);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (chosen < today) {
@@ -139,7 +139,8 @@ export default function EditarTorneioPage() {
               <select
                 value={modo}
                 onChange={(e) => setModo(e.target.value)}
-                className="p-3 rounded-lg bg-white/90 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="p-3 rounded-xl bg-white/90 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none shadow-sm"
+                style={{ borderRadius: "14px" }}
                 required
               >
                 <option value="Classic">Classic</option>

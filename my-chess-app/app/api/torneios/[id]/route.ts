@@ -75,17 +75,7 @@ export async function GET(
       );
     }
 
-    const isCriador = torneio.criadorId === session.user.id;
-    const isParticipante = torneio.participantes.some(
-      (p) => p.userId === session.user.id
-    );
-
-    if (!isCriador && !isParticipante) {
-      return NextResponse.json(
-        { error: "Você não participa deste torneio" },
-        { status: 403 }
-      );
-    }
+    // Permitir visualização mesmo se não for participante/criador; ações sensíveis são checadas em endpoints próprios
 
     // Garante que o criador está cadastrado como participante (e aparece como líder)
     const liderJaParticipa = torneio.participantes.some(

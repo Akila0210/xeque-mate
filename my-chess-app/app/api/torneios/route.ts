@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const dataTorneio = new Date(body.data);
+    const dataTorneio = new Date(`${body.data}T00:00:00`);
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     if (Number.isNaN(dataTorneio.getTime()) || dataTorneio < hoje) {

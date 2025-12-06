@@ -18,6 +18,39 @@ export default function ConvitePage() {
   const [loading, setLoading] = useState(true);
   const [torneio, setTorneio] = useState<TorneioConvite | null>(null);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+
+  const ErrorPanel = ({ title, message }: { title: string; message: string }) => (
+    <div className="w-full max-w-xl bg-gradient-to-br from-[#2a0a0a] via-[#3b1111] to-[#1f0a0a] border border-[#f87171]/40 rounded-2xl p-6 text-white shadow-lg backdrop-blur-md">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f87171]/20 border border-[#f87171]/60 text-[#fecdd3] text-lg font-bold">
+          !
+        </div>
+        <div className="flex-1">
+          <p className="text-sm uppercase tracking-wide text-[#fecdd3]/80 font-semibold">Alerta</p>
+          <h2 className="text-lg font-semibold text-white mt-1">{title}</h2>
+          <p className="text-sm text-[#ffe4e6] mt-1 leading-relaxed">{message}</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              onClick={() => router.push("/torneios")}
+              className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-sm font-semibold"
+            >
+              Voltar para torneios
+            </button>
+            <button
+              onClick={() => {
+                setActionError("");
+                setError("");
+              }}
+              className="px-4 py-2 rounded-lg bg-[#f87171] hover:bg-[#f05252] text-sm font-semibold border border-[#f87171]/60"
+            >
+              Fechar aviso
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   useEffect(() => {
     async function load() {
@@ -45,7 +78,7 @@ export default function ConvitePage() {
       ? {
           label: "Finalizado",
           className:
-            "inline-block text-[11px] px-2 py-0.5 rounded-full bg-[#1F5C3F] text-[#D8F3DC] border border-[#3FA072]",
+            "inline-block text-[11px] px-2 py-0.5 rounded-full bg-[#D9F4EA] text-[#1E8F63] border border-[#A4E2C7]",
         }
       : temConfrontos
         ? {
@@ -63,11 +96,11 @@ export default function ConvitePage() {
   async function aceitarConvite() {
     if (!torneio) return;
     if (torneio.finalizado) {
-      alert("Não é possível entrar em torneio finalizado.");
+      setActionError("Não é possível entrar em torneio finalizado.");
       return;
     }
     if (temConfrontos) {
-      alert("Confrontos já gerados. Não é possível entrar.");
+      setActionError("Confrontos já gerados. Não é possível entrar.");
       return;
     }
 
@@ -78,7 +111,7 @@ export default function ConvitePage() {
     const json = await res.json();
 
     if (json.error) {
-      alert(json.error);
+      setActionError(json.error);
       return;
     }
 
@@ -89,16 +122,25 @@ export default function ConvitePage() {
   if (loading)
     return <div className="text-white p-10">Carregando...</div>;
 
-  if (error)
-    return <div className="text-[#C34141] p-10">{error}</div>;
+  if (error) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-4">
+        <ErrorPanel title="Não foi possível acessar o convite" message={error} />
+      </main>
+    );
+  }
 
   if (!torneio) {
-    return <div className="text-white p-10">Convite não disponível</div>;
+    return (
+      <main className="min-h-screen flex items-center justify-center px-4">
+        <ErrorPanel title="Convite não disponível" message="Este convite pode ter expirado ou sido removido." />
+      </main>
+    );
   }
 
   return (
     <main className="min-h-screen flex items-center justify-center">
-      <div className="bg-white/10 border border-white/20 p-8 rounded-xl text-white w-[90%] max-w-md text-center backdrop-blur-lg">
+      <div className="bg-white/10 border border-white/20 p-8 rounded-xl text-white w-[90%] max-w-md text-center backdrop-blur-lg space-y-4">
         <h1 className="text-2xl font-bold mb-2">Convite para torneio</h1>
         <p className="opacity-80">{torneio.nome}</p>
 
@@ -108,9 +150,22 @@ export default function ConvitePage() {
           Data: {new Date(torneio.data).toLocaleDateString("pt-BR")}
         </p>
 
+        {actionError && (
+          <div className="text-left bg-[#2a0a0a]/80 border border-[#f87171]/40 text-[#ffe4e6] rounded-xl p-4 shadow-inner">
+            <p className="text-sm font-semibold text-[#fecdd3]">Não foi possível continuar</p>
+            <p className="text-sm leading-relaxed mt-1">{actionError}</p>
+            <button
+              className="mt-3 inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-semibold"
+              onClick={() => setActionError("")}
+            >
+              Fechar
+            </button>
+          </div>
+        )}
+
         <button
           onClick={aceitarConvite}
-          className="mt-6 w-full bg-[#3FA072] hover:bg-[#358a60] border border-[#358a60] px-4 py-2 rounded-lg font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-6 w-full bg-[#4CCB8A] hover:bg-[#3FB479] border border-[#3FB479] px-4 py-2 rounded-lg font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!torneio || temConfrontos || torneio.finalizado}
         >
           Aceitar convite
@@ -118,7 +173,7 @@ export default function ConvitePage() {
 
         <button
           onClick={() => router.push("/torneios")}
-          className="mt-3 w-full bg-[#D35252] hover:bg-[#C34141] border border-[#C34141] px-4 py-2 rounded-lg font-semibold text-white"
+          className="mt-3 w-full bg-[#F37272] hover:bg-[#E05F5F] border border-[#E05F5F] px-4 py-2 rounded-lg font-semibold text-white"
         >
           Recusar convite
         </button>
