@@ -194,3 +194,19 @@ model Convite {
   @@index([criadoPorId])
   @@map("convite")
 }
+
+model Puzzle {
+  id              String   @id @default(cuid())
+  externalId      String   @unique           // PuzzleId do Lichess
+  fen             String
+  moves           String                      // CSV/JSON com lances em UCI
+  rating          Int
+  ratingDeviation Int
+  popularity      Int
+  nbPlays         Int
+  themes          String                      // ex: "mate mateIn2 middlegame"
+  gameUrl         String?
+  openingTags     String?
+
+  createdAt       DateTime @default(now())
+}
