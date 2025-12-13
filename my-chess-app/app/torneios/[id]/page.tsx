@@ -569,7 +569,7 @@ export default function TorneioPage() {
             <div className="p-4 flex flex-col gap-3">
               <p className="text-sm text-gray-200">Compartilhe este link para convidar jogadores:</p>
               {(() => {
-                const conviteLink = `http://192.168.0.6:3000/torneios/${id}/convite`;
+                const conviteLink = `http://172.25.201.121:3000/torneios/${id}/convite`;
                 const copyLink = async () => {
                   const copyWithExecCommand = () => {
                     const textarea = document.createElement("textarea");
