@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ChessPuzzle } from "@react-chess-tools/react-chess-puzzle";
 import { Button } from "@/components/ui/button";
 import { FlagIcon, HelpCircleIcon } from "lucide-react";
@@ -11,7 +11,9 @@ type WeeklyPuzzleClientProps = {
   rating: number;
   themes: string;
   title?: string;
-  nextChange?: string; // ISO string com data/hora da próxima troca
+  nextChange?: string;
+  puzzleId: string;
+  type: "daily" | "weekly";
 };
 
 function formatRemaining(ms: number) {
@@ -34,6 +36,8 @@ export function WeeklyPuzzleClient({
   themes,
   title = "Desafio Semanal",
   nextChange,
+  puzzleId,
+  type,
 }: WeeklyPuzzleClientProps) {
   const puzzle = {
     fen,
@@ -42,6 +46,14 @@ export function WeeklyPuzzleClient({
   };
 
   const [remaining, setRemaining] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Rastreia se o usuário está elegível para ganhar pontos
+  const [isEligibleForPoints, setIsEligibleForPoints] = useState(true);
+  
+  // Ref para rastrear se já mostrou aviso
+  const hasShownWarning = useRef(false);
 
   useEffect(() => {
     if (!nextChange) return;
@@ -54,10 +66,67 @@ export function WeeklyPuzzleClient({
     };
 
     update();
-    const id = setInterval(update, 60_000); // a cada 1 minuto
+    const id = setInterval(update, 60_000);
 
     return () => clearInterval(id);
   }, [nextChange]);
+
+  // Função para marcar como inelegível (será chamada pelos botões)
+  const markAsIneligible = (reason: string) => {
+    if (!hasShownWarning.current) {
+      console.log(`Elegibilidade perdida: ${reason}`);
+      setIsEligibleForPoints(false);
+      setMessage(`⚠️ ${reason} - você não receberá pontos neste desafio`);
+      setTimeout(() => setMessage(null), 3000);
+      hasShownWarning.current = true;
+    } else {
+      setIsEligibleForPoints(false);
+    }
+  };
+
+  // Função para registrar conclusão do puzzle
+  const handlePuzzleSolved = async () => {
+    if (isSubmitting) return;
+
+    // Verifica elegibilidade antes de registrar
+    if (!isEligibleForPoints) {
+      setMessage("✅ Puzzle resolvido! (sem pontos)");
+      setTimeout(() => setMessage(null), 5000);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/puzzles/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          puzzleId,
+          type,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage(`🎉 Parabéns! +${data.points} pontos!`);
+      } else if (data.alreadyCompleted) {
+        setMessage("❌ Puzzle já completado anteriormente");
+      } else {
+        setMessage(data.message || "Puzzle resolvido!");
+      }
+
+      setTimeout(() => setMessage(null), 5000);
+    } catch (error) {
+      console.error("Erro ao registrar conclusão:", error);
+      setMessage("⚠️ Erro ao registrar conclusão");
+      setTimeout(() => setMessage(null), 5000);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-md bg-white/20 backdrop-blur-md rounded-3xl p-5 border border-white/30">
@@ -75,8 +144,18 @@ export function WeeklyPuzzleClient({
         </p>
       )}
 
-      <ChessPuzzle.Root puzzle={puzzle}>
-        <ChessPuzzle.Board className="rounded-xl overflow-hidden mb-6" />
+      {/* Mensagem de feedback */}
+      {message && (
+        <div className="mb-3 p-3 rounded-lg bg-red-500/20 border border-red-400/40 text-center">
+          <p className="text-sm font-semibold text-white">{message}</p>
+        </div>
+      )}
+
+      <ChessPuzzle.Root 
+        puzzle={puzzle} 
+        onSolve={handlePuzzleSolved}
+      >
+        <ChessPuzzle.Board />
 
         <div className="flex items-center justify-center gap-10 mt-6">
           {/* Reiniciar */}
@@ -89,6 +168,7 @@ export function WeeklyPuzzleClient({
                 variant="outline"
                 size="icon"
                 className="rounded-full bg-white/10 border-white/40 text-white hover:bg-white/20"
+                onPointerDown={() => markAsIneligible("Puzzle resetado")}
               >
                 <FlagIcon className="w-5 h-5" />
               </Button>
@@ -98,11 +178,15 @@ export function WeeklyPuzzleClient({
 
           {/* Dica */}
           <div className="flex flex-col items-center gap-1">
-            <ChessPuzzle.Hint showOn={["in-progress"]} asChild>
+            <ChessPuzzle.Hint 
+              showOn={["in-progress"]} 
+              asChild
+            >
               <Button
                 variant="outline"
                 size="icon"
                 className="rounded-full bg-white/10 border-white/40 text-white hover:bg-white/20"
+                onPointerDown={() => markAsIneligible("Dica usada")}
               >
                 <HelpCircleIcon className="w-5 h-5" />
               </Button>

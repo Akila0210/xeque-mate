@@ -41,6 +41,7 @@ async function getDailyPuzzleAuto() {
   const endDate = getDailyEndDate();
 
   return {
+    id: puzzle.id, // NOVO: retorna o ID
     fen: puzzle.fen,
     moves: puzzle.moves.split(" "),
     rating: puzzle.rating,
@@ -77,6 +78,8 @@ export default async function DailyChallengePage() {
               moves={puzzle.moves}
               rating={puzzle.rating}
               themes={puzzle.themes}
+              puzzleId={puzzle.id} // NOVO
+              type="daily" // NOVO
             />
             <p className="text-[11px] text-blue-100 text-center mt-2">
               Disponível até {puzzle.availableUntil}

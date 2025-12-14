@@ -44,6 +44,7 @@ async function getWeeklyPuzzleAuto() {
   nextWeek.setHours(0, 0, 0, 0);
 
   return {
+    id: puzzle.id, // NOVO: retorna o ID
     fen: puzzle.fen,
     moves: puzzle.moves.split(" "),
     rating: puzzle.rating,
@@ -80,6 +81,8 @@ export default async function WeeklyChallengePage() {
             rating={puzzle.rating}
             themes={puzzle.themes}
             nextChange={puzzle.nextChange}
+            puzzleId={puzzle.id} // NOVO
+            type="weekly" // NOVO
           />
         )}
       </main>

@@ -197,6 +197,9 @@ export async function PUT(
       dataUpdate.descricao = body.descricao ?? null;
     }
 
+    // NOVA LÓGICA: Detecta se está finalizando o torneio
+    const estáFinalizando = body.finalizado === true && !torneio.finalizado;
+
     if (body.finalizado !== undefined) {
       dataUpdate.finalizado = !!body.finalizado;
     }
@@ -205,6 +208,19 @@ export async function PUT(
       where: { id },
       data: dataUpdate,
     });
+
+    // NOVO: Se está finalizando, distribui pontos aos participantes
+    if (estáFinalizando) {
+      try {
+        const { awardTournamentPoints } = await import("@/lib/points");
+        const awards = await awardTournamentPoints(id);
+        console.log(`Pontos distribuídos no torneio ${id}:`, awards);
+      } catch (pointsError) {
+        console.error("Erro ao distribuir pontos do torneio:", pointsError);
+        // Não falha a requisição se houver erro nos pontos
+        // O torneio já foi finalizado com sucesso
+      }
+    }
 
     return NextResponse.json(updated);
   } catch (error) {
