@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import Link from "next/link";
 import { getWeeklyPosition } from "../data/get-weekly-position";
 import { ProfileClient } from "./ProfileClient";
-import { getAllTimeRanking } from "../data/get-alltime-ranking";
+import { getAllTimeRanking, getWeeklyRanking } from "../data/get-alltime-ranking"; 
 
 
 
@@ -29,7 +29,7 @@ export default async function ProfilePage() {
   const achievements = await getAchievements();
 
   const weeklyPosition = await getWeeklyPosition(session.user.id);
-  const weeklyRanking = await getAllTimeRanking();
+  const weeklyRanking = await getWeeklyRanking();
 
   return (
     <>    
