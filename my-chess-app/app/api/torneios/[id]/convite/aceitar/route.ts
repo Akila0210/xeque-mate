@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { AchievementService } from "@/lib/achievements";
 
 export async function POST(req: Request, { params }: any) {
   const session = await auth.api.getSession({
@@ -16,19 +17,32 @@ export async function POST(req: Request, { params }: any) {
 
   const torneio = await prisma.torneio.findUnique({
     where: { id: torneioId },
-    select: { id: true, finalizado: true, _count: { select: { partidas: true } } },
+    select: {
+      id: true,
+      finalizado: true,
+      _count: { select: { partidas: true } },
+    },
   });
 
   if (!torneio) {
-    return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Torneio não encontrado" },
+      { status: 404 }
+    );
   }
 
   if (torneio.finalizado) {
-    return NextResponse.json({ error: "Torneio já finalizado" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Torneio já finalizado" },
+      { status: 400 }
+    );
   }
 
   if ((torneio._count?.partidas ?? 0) > 0) {
-    return NextResponse.json({ error: "Confrontos já foram gerados" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Confrontos já foram gerados" },
+      { status: 400 }
+    );
   }
 
   // Verifica se já é participante
@@ -37,8 +51,8 @@ export async function POST(req: Request, { params }: any) {
       torneioId_userId: {
         torneioId,
         userId,
-      }
-    }
+      },
+    },
   });
 
   if (jaExiste) {
@@ -50,8 +64,12 @@ export async function POST(req: Request, { params }: any) {
     data: {
       torneioId,
       userId,
-    }
+    },
   });
 
-  return NextResponse.json({ ok: true });
+  const unlockedAchievements = await AchievementService.recordTournamentJoined(
+    userId
+  );
+
+  return NextResponse.json({ ok: true, unlockedAchievements });
 }

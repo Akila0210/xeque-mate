@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { AchievementToast, useAchievementToast } from "@/components/achievement-toast";
 
 type TorneioConvite = {
   id: string;
@@ -19,6 +20,7 @@ export default function ConvitePage() {
   const [torneio, setTorneio] = useState<TorneioConvite | null>(null);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
+  const { achievement, handleClose, showAchievement } = useAchievementToast();
 
   const ErrorPanel = ({ title, message }: { title: string; message: string }) => (
     <div className="w-full max-w-xl bg-gradient-to-br from-[#2a0a0a] via-[#3b1111] to-[#1f0a0a] border border-[#f87171]/40 rounded-2xl p-6 text-white shadow-lg backdrop-blur-md">
@@ -76,21 +78,21 @@ export default function ConvitePage() {
   const status = torneio
     ? torneio.finalizado
       ? {
-          label: "Finalizado",
-          className:
-            "inline-block text-[11px] px-2 py-0.5 rounded-full bg-[#D9F4EA] text-[#1E8F63] border border-[#A4E2C7]",
-        }
+        label: "Finalizado",
+        className:
+          "inline-block text-[11px] px-2 py-0.5 rounded-full bg-[#D9F4EA] text-[#1E8F63] border border-[#A4E2C7]",
+      }
       : temConfrontos
         ? {
-            label: "Em disputa",
-            className:
-              "inline-block text-[11px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-100 border border-blue-400/50",
-          }
+          label: "Em disputa",
+          className:
+            "inline-block text-[11px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-100 border border-blue-400/50",
+        }
         : {
-            label: "Esperando confrontos",
-            className:
-              "inline-block text-[11px] px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-100 border border-gray-400/40",
-          }
+          label: "Esperando confrontos",
+          className:
+            "inline-block text-[11px] px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-100 border border-gray-400/40",
+        }
     : null;
 
   async function aceitarConvite() {
@@ -113,6 +115,10 @@ export default function ConvitePage() {
     if (json.error) {
       setActionError(json.error);
       return;
+    }
+
+    if (Array.isArray(json.unlockedAchievements)) {
+      json.unlockedAchievements.forEach((a: any) => showAchievement(a));
     }
 
     alert("Você entrou no torneio!");
@@ -178,6 +184,7 @@ export default function ConvitePage() {
           Recusar convite
         </button>
       </div>
+      <AchievementToast achievement={achievement} onClose={handleClose} />
     </main>
   );
 }
